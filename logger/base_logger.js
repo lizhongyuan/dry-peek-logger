@@ -5,7 +5,7 @@ const process = require('process');
 const _ = require('underscore');
 const { format } = require('util');
 const { TraceId, Net } = require('../util');
-const { DEFAULT_DRY_PEEK_OPTION, DEFAULT_PLACE_HOLDER } = require('../common/constant/config_option');
+const { DEFAULT_DRY_PEEK_OPTIONS, DEFAULT_PLACE_HOLDER } = require('../common/constant/config_option');
 const { WinstonFactory, getWinstonPool } = require('./winston');
 const traceIdInstance = new TraceId();
 
@@ -15,11 +15,11 @@ const winstonPool = getWinstonPool();
 
 class BaseLogger {
 
-  constructor(options = DEFAULT_DRY_PEEK_OPTION) {
+  constructor(options = DEFAULT_DRY_PEEK_OPTIONS) {
 
     this.options = _.clone(options);
 
-    const winstonOptions = Object.assign({}, DEFAULT_DRY_PEEK_OPTION, this.options);
+    const winstonOptions = Object.assign({}, DEFAULT_DRY_PEEK_OPTIONS, this.options);
 
     this.dryPeekContent = {};
     this.dryPeekContent.name = options.name || "dryPeekLogger";

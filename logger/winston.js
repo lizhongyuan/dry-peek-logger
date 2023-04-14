@@ -4,14 +4,12 @@
 // use os.EOL
 const os = require('os');
 
-// winston and winston-daily-rotate-file
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const { createLogger, format } = winston;
-// const { timestamp, printf } = format;
 const { printf } = format;
 const { Time } = require('../util');
-const { DEFAULT_DRY_PEEK_OPTION } = require('../common/constant/config_option');
+const { DEFAULT_DRY_PEEK_OPTIONS } = require('../common/constant/config_option');
 
 const dryPeekWinstonPool = {};    // winston池
 
@@ -69,7 +67,7 @@ process.on('SIGUSR2', function() {
 
 class WinstonFactory {
 
-  constructor(options = DEFAULT_DRY_PEEK_OPTION) {
+  constructor(options = DEFAULT_DRY_PEEK_OPTIONS) {
     this.options = options;
     this.defaultTransportOptions_ = {
       json: false,
