@@ -1,0 +1,19 @@
+{
+  "name": "dry-peek-logger",
+  "version": "1.0.0",
+  "description": "A traceable, flexible and light nodejs logger. Sometimes, dry peek is best strategy",
+  "main": "index.js",
+  "author": "cyberdash@163.com",
+  "license": "ISC",
+  "dependencies": {
+    "bufferpack": "^0.0.6",
+    "express": "^4.18.2",
+    "ip": "^1.1.8",
+    "koa": "^2.14.1",
+    "moment": "^2.29.4",
+    "mustache": "^4.2.0",
+    "process": "^0.11.10",
+    "winston": "^3.8.2",
+    "winston-daily-rotate-file": "^4.7.1"
+  }
+}
