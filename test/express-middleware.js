@@ -16,8 +16,8 @@ const option = {
     template: '[{{timestamp}}] <{{level}}> {{traceId}} {{ip}} {{pid}} {{method}} {{httpPath}} ({{timeCost}}) {{pivot}} {{message}}'
 };
 
-var express = require('express')
-var app = express()
+const express = require('express');
+const app = express();
 
 const port = 3000;
 

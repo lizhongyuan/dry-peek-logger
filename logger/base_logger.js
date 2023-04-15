@@ -2,7 +2,6 @@
 
 
 const process = require('process');
-const _ = require('underscore');
 const { format } = require('util');
 const { TraceId, Net, Time} = require('../util');
 const { DEFAULT_DRY_PEEK_OPTIONS, DEFAULT_PLACE_HOLDER } = require('../common/constant/config_option');
