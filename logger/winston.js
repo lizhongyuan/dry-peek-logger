@@ -30,7 +30,7 @@ const dryPeekTransportPool = {};  // transport池
  *
  * @type {Format}
  */
-const loggerFormat = printf(({ message, level }) => {
+const dryPeekLogFormat = printf(({ message, level }) => {
 
   const timestamp = Time.getISODate(Date.now());
 
@@ -71,7 +71,7 @@ class WinstonFactory {
     this.options = options;
     this.defaultTransportOptions_ = {
       json: false,
-      format: loggerFormat
+      format: dryPeekLogFormat
     }
   }
 

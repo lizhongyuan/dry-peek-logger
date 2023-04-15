@@ -2,6 +2,7 @@ const { expressMiddlewareBuilder } = require('../middleware');
 
 const option = {
     // name: 'dpLogger',     // 日志实例名称
+    type: 'express',
     console: true,
     autoTraceId: false,
     needErrorFile: true,

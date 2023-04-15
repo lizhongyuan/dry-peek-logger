@@ -17,6 +17,7 @@
     "long": "^5.2.1",
     "mkdirp": "^1.0.4",
     "moment": "^2.29.4",
+    "mustache": "^4.2.0",
     "process": "^0.11.10",
     "underscore": "^1.13.6",
     "winston": "^3.8.2",
