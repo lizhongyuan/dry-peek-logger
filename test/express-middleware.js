@@ -4,7 +4,7 @@ const option = {
     // name: 'dpLogger',     // 日志实例名称
     type: 'express',
     console: true,
-    autoTraceId: false,
+    autoTraceId: true,
     needErrorFile: true,
     level: 'silly',         // level
     dirname: './logs',         // 文本存放路径
@@ -12,7 +12,8 @@ const option = {
     datePattern: '-YYYY.MM.DD',
     zippedArchive: true,
     prepend: false,
-    maxSize: '20m'
+    maxSize: '20m',
+    template: '[{{timestamp}}] <{{level}}> {{traceId}} {{ip}} {{pid}} {{method}} {{httpPath}} ({{timeCost}}) {{pivot}} {{message}}'
 };
 
 var express = require('express')
@@ -23,13 +24,13 @@ const port = 3000;
 app.use(expressMiddlewareBuilder(option));
 
 app.get('/test', function (req, res) {
-    req.context.dpLogger.error("test1");
-    req.context.dpLogger.warn("test1");
-    req.context.dpLogger.info("test1");
-    req.context.dpLogger.verbose("test1");
-    req.context.dpLogger.debug("test1");
-    req.context.dpLogger.silly("test1");
-    req.context.dpLogger.info("test2");
+    req.context.dpLogger.error("test dry-peek-logger error");
+    req.context.dpLogger.warn("test dry-peek-logger warn");
+    req.context.dpLogger.info("test dry-peek-logger info");
+    req.context.dpLogger.verbose("test dry-peek-logger verbose");
+    req.context.dpLogger.debug("test dry-peek-logger debug");
+    req.context.dpLogger.silly("test dry-peek-logger silly");
+    req.context.dpLogger.info("Dry peek !");
     res.send('hello world, express')
 })
 

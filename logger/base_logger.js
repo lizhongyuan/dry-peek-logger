@@ -4,10 +4,14 @@
 const process = require('process');
 const _ = require('underscore');
 const { format } = require('util');
-const { TraceId, Net } = require('../util');
+const { TraceId, Net, Time} = require('../util');
 const { DEFAULT_DRY_PEEK_OPTIONS, DEFAULT_PLACE_HOLDER } = require('../common/constant/config_option');
 const { WinstonFactory, getWinstonPool } = require('./winston');
 const traceIdInstance = new TraceId();
+const Mustache = require("mustache");
+Mustache.escape = function (text) {
+  return text;
+};
 
 
 const winstonPool = getWinstonPool();
@@ -17,22 +21,27 @@ class BaseLogger {
 
   constructor(options = DEFAULT_DRY_PEEK_OPTIONS) {
 
-    this.options = _.clone(options);
-
-    const winstonOptions = Object.assign({}, DEFAULT_DRY_PEEK_OPTIONS, this.options);
+    const baseLoggerOptions = Object.assign({}, DEFAULT_DRY_PEEK_OPTIONS, options);
 
     this.dryPeekContent = {};
-    this.dryPeekContent.name = options.name || "dryPeekLogger";
-    this.dryPeekContent.httpPath = options.httpPath || DEFAULT_PLACE_HOLDER;
-    this.dryPeekContent.method = options.method || DEFAULT_PLACE_HOLDER;
+    this.dryPeekContent.name = baseLoggerOptions.name;
+    this.dryPeekContent.template = baseLoggerOptions.template;
+    this.dryPeekContent.autoTraceId = baseLoggerOptions.autoTraceId;
+
+    this.dryPeekContent.logView = {};
+    this.dryPeekContent.logView.controller = '-';
+    this.dryPeekContent.logView.service = '-';
+    this.dryPeekContent.logView.httpPath = baseLoggerOptions.httpPath || DEFAULT_PLACE_HOLDER;
+    this.dryPeekContent.logView.method = baseLoggerOptions.method || DEFAULT_PLACE_HOLDER;
+    this.dryPeekContent.logView.pid = process.pid;
+    this.dryPeekContent.logView.ip = Net.IP.getLocalIp();
+    this.dryPeekContent.logView.timeCost = DEFAULT_PLACE_HOLDER;
+    this.dryPeekContent.logView.pivot = baseLoggerOptions.pivot;
     this.dryPeekContent.startTimestamp = Date.now();
-    this.dryPeekContent.pid = process.pid;
-    this.dryPeekContent.ip = Net.IP.getLocalIp();
-    this.dryPeekContent.timeCost = DEFAULT_PLACE_HOLDER;
-    this.setTraceId(options.traceId);
+    this.setTraceId(baseLoggerOptions.traceId);
 
     if (!winstonPool[this.dryPeekContent.name]) {
-      const winstonFactory = new WinstonFactory(winstonOptions);
+      const winstonFactory = new WinstonFactory(baseLoggerOptions);
       winstonFactory.generate();
     }
   }
@@ -40,14 +49,14 @@ class BaseLogger {
   setTraceId(traceId) {
 
     if (typeof traceId === 'string' && traceId !== '') {
-      this.dryPeekContent.traceId = traceId;
+      this.dryPeekContent.logView.traceId = traceId;
       return;
     }
 
-    if (this.options.autoTraceId === true) {
-      this.dryPeekContent.traceId = traceIdInstance.generate();
+    if (this.dryPeekContent.autoTraceId === true) {
+      this.dryPeekContent.logView.traceId = traceIdInstance.generate();
     } else {
-      this.dryPeekContent.traceId = DEFAULT_PLACE_HOLDER;
+      this.dryPeekContent.logView.traceId = DEFAULT_PLACE_HOLDER;
     }
   }
 
@@ -86,53 +95,61 @@ class BaseLogger {
 
 
   error(...args) {
-    const formatLog = this._buildFormatLog(...args);
+    this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
+    this.dryPeekContent.logView.level = 'error';
+    const formatLog = this._buildLog(...args);
     winstonPool[this.dryPeekContent.name].error(formatLog);
   }
 
   warn(...args) {
-    const formatLog = this._buildFormatLog(...args);
+    this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
+    this.dryPeekContent.logView.level = 'warn';
+    const formatLog = this._buildLog(...args);
     winstonPool[this.dryPeekContent.name].warn(formatLog);
   }
 
   verbose(...args) {
-    const formatLog = this._buildFormatLog(...args);
+    this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
+    this.dryPeekContent.logView.level = 'verbose';
+
+    const formatLog = this._buildLog(...args);
     winstonPool[this.dryPeekContent.name].verbose(formatLog);
   }
 
   info(...args) {
-    const formatLog = this._buildFormatLog(...args);
+    this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
+    this.dryPeekContent.logView.level = 'info';
+
+    const formatLog = this._buildLog(...args);
     winstonPool[this.dryPeekContent.name].info(formatLog);
   }
 
   debug(...args) {
-    const formatLog = this._buildFormatLog(...args);
+    this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
+    this.dryPeekContent.logView.level = 'debug';
+
+    const formatLog = this._buildLog(...args);
     winstonPool[this.dryPeekContent.name].debug(formatLog);
   }
 
   silly(...args) {
-    const formatLog = this._buildFormatLog(...args);
+    this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
+    this.dryPeekContent.logView.level = 'silly';
+
+    const formatLog = this._buildLog(...args);
     winstonPool[this.dryPeekContent.name].silly(formatLog);
   }
 
-  _buildFormatLog(params) {
+  _buildLog(params) {
 
     const timeCost = Date.now() - this.dryPeekContent.startTimestamp;
-    this.dryPeekContent.timeCost = String(timeCost) + 'ms';
-    this.dryPeekContent.pivot = '|';
-    this.dryPeekContent.businessLog = format(params);
+    this.dryPeekContent.logView.timeCost = String(timeCost) + 'ms';
+    this.dryPeekContent.logView.pivot = '|';
+    this.dryPeekContent.logView.message = format(params);
 
-    const formatLog =
-        `${this.dryPeekContent.traceId} ` +
-        `${this.dryPeekContent.ip} ` +
-        `${this.dryPeekContent.pid} ` +
-        `${this.dryPeekContent.method} ` +
-        `${this.dryPeekContent.httpPath} ` +
-        `${this.dryPeekContent.timeCost} ` +
-        `${this.dryPeekContent.pivot} ` +
-        `${this.dryPeekContent.businessLog}`;
+    const output = Mustache.render(this.dryPeekContent.template, this.dryPeekContent.logView);
 
-    return formatLog;
+    return output;
   }
 }
 

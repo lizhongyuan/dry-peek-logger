@@ -1,7 +1,6 @@
 'use strict';
 
 
-// use os.EOL
 const os = require('os');
 
 const winston = require('winston');
@@ -26,18 +25,14 @@ const dryPeekWinstonPool = {};    // winston池
 const dryPeekTransportPool = {};  // transport池
 
 
-/**
- *
- * @type {Format}
- */
-const dryPeekLogFormat = printf(({ message, level }) => {
+const dryPeekLogFormat = printf(({ message, }) => {
 
   const timestamp = Time.getISODate(Date.now());
 
   // 处理多行message
   message = message ? message.replace(/\r\n|\r|\n/g, `${os.EOL} | `) : message;
 
-  return `${timestamp} ${level} ${message}`;
+  return `${message}`;
 });
 
 
@@ -45,9 +40,9 @@ function setLevel(level) {
 
   const keys = Object.keys(dryPeekTransportPool);
 
-  keys.forEach(curKey => {
-    for (const transport in dryPeekTransportPool[curKey]) {
-      dryPeekTransportPool[curKey][transport].level = level;
+  keys.forEach(key => {
+    for (const transport in dryPeekTransportPool[key]) {
+      dryPeekTransportPool[key][transport].level = level;
       console.log('transport:', transport, 'level', level);
     }
   })

@@ -24,6 +24,3 @@ const output = Mustache.render(template, log);
 
 console.log(output);
 
-// const aaa = Mustache.parse(template);
-
-// console.log(aaa);
