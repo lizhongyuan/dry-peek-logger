@@ -14,7 +14,7 @@ Mustache.escape = function (text) {
 
 
 const winstonPool = getWinstonPool();
-
+const { WINSTON_DAILY_ROTATE_FILE_KEYS } = require('../common/constant/winston');
 
 class BaseLogger {
 
@@ -27,9 +27,24 @@ class BaseLogger {
     this.dryPeekContent.template = baseLoggerOptions.template;
     this.dryPeekContent.autoTraceId = baseLoggerOptions.autoTraceId;
 
+    this.dryPeekContent.winstonDailyRotateFile = {};
+    for (const key of WINSTON_DAILY_ROTATE_FILE_KEYS) {
+      if (baseLoggerOptions[key]) {
+        this.dryPeekContent.winstonDailyRotateFile[key] = baseLoggerOptions[key];
+      }
+    }
+
+    this.dryPeekContent.dpTransportOptions = {}
+    this.dryPeekContent.dpTransportOptions.console = baseLoggerOptions.console;
+    this.dryPeekContent.dpTransportOptions.needErrorFile = baseLoggerOptions.needErrorFile;
+
+    this.dryPeekContent.winston = {};
+    this.dryPeekContent.winston.colorized = baseLoggerOptions.colorized;
+
     this.dryPeekContent.logView = {};
-    this.dryPeekContent.logView.controller = '-';
+    this.dryPeekContent.logView.controller = '-'; // todo: 增加nestjs的支持
     this.dryPeekContent.logView.service = '-';
+    this.dryPeekContent.logView.label = baseLoggerOptions.label;
     this.dryPeekContent.logView.httpPath = baseLoggerOptions.httpPath || DEFAULT_PLACE_HOLDER;
     this.dryPeekContent.logView.method = baseLoggerOptions.method || DEFAULT_PLACE_HOLDER;
     this.dryPeekContent.logView.pid = process.pid;
@@ -40,7 +55,13 @@ class BaseLogger {
     this.setTraceId(baseLoggerOptions.traceId);
 
     if (!winstonPool[this.dryPeekContent.name]) {
-      const winstonFactory = new WinstonFactory(baseLoggerOptions);
+      // const winstonFactory = new WinstonFactory(baseLoggerOptions);
+      const winstonFactory = new WinstonFactory(
+        baseLoggerOptions,
+        this.dryPeekContent.winstonDailyRotateFile,
+        this.dryPeekContent.dpTransportOptions,
+        this.dryPeekContent.winston,
+      );
       winstonFactory.generate();
     }
   }
@@ -96,14 +117,14 @@ class BaseLogger {
   error(...args) {
     this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
     this.dryPeekContent.logView.level = 'error';
-    const formatLog = this._buildLog(...args);
+    const formatLog = this._buildLog(args);
     winstonPool[this.dryPeekContent.name].error(formatLog);
   }
 
   warn(...args) {
     this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
     this.dryPeekContent.logView.level = 'warn';
-    const formatLog = this._buildLog(...args);
+    const formatLog = this._buildLog(args);
     winstonPool[this.dryPeekContent.name].warn(formatLog);
   }
 
@@ -111,7 +132,7 @@ class BaseLogger {
     this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
     this.dryPeekContent.logView.level = 'verbose';
 
-    const formatLog = this._buildLog(...args);
+    const formatLog = this._buildLog(args);
     winstonPool[this.dryPeekContent.name].verbose(formatLog);
   }
 
@@ -119,7 +140,7 @@ class BaseLogger {
     this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
     this.dryPeekContent.logView.level = 'info';
 
-    const formatLog = this._buildLog(...args);
+    const formatLog = this._buildLog(args);
     winstonPool[this.dryPeekContent.name].info(formatLog);
   }
 
@@ -127,7 +148,7 @@ class BaseLogger {
     this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
     this.dryPeekContent.logView.level = 'debug';
 
-    const formatLog = this._buildLog(...args);
+    const formatLog = this._buildLog(args);
     winstonPool[this.dryPeekContent.name].debug(formatLog);
   }
 
@@ -135,16 +156,32 @@ class BaseLogger {
     this.dryPeekContent.logView.timestamp = Time.getISODate(Date.now());
     this.dryPeekContent.logView.level = 'silly';
 
-    const formatLog = this._buildLog(...args);
+    const formatLog = this._buildLog(args);
     winstonPool[this.dryPeekContent.name].silly(formatLog);
   }
 
-  _buildLog(params) {
+  _buildLog(args) {
 
     const timeCost = Date.now() - this.dryPeekContent.startTimestamp;
+
     this.dryPeekContent.logView.timeCost = String(timeCost) + 'ms';
     this.dryPeekContent.logView.pivot = '|';
-    this.dryPeekContent.logView.message = format(params);
+
+    const handledArgs = [];
+    for (let arg of args) {
+      if (arg) {
+        if (typeof arg === 'string') {
+          arg = arg.replace(/[\n\r]/g,'');
+        } else if (typeof arg === 'object') {
+          arg = JSON.stringify(arg).replace(/[\n\r]/g,'');
+        }
+      } else {
+        arg = '';
+      }
+      handledArgs.push(arg);
+    }
+
+    this.dryPeekContent.logView.message = format(...handledArgs);
 
     const output = Mustache.render(this.dryPeekContent.template, this.dryPeekContent.logView);
 

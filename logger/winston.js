@@ -1,13 +1,10 @@
 'use strict';
 
 
-const os = require('os');
-
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const { createLogger, format } = winston;
-const { printf } = format;
-const { Time } = require('../util');
+const { timestamp, printf, prettyPrint, label, splat } = format;
 const { DEFAULT_DRY_PEEK_OPTIONS } = require('../common/constant/config_option');
 
 const dryPeekWinstonPool = {};    // winston池
@@ -24,16 +21,6 @@ const dryPeekWinstonPool = {};    // winston池
  */
 const dryPeekTransportPool = {};  // transport池
 
-
-const dryPeekLogFormat = printf(({ message, }) => {
-
-  const timestamp = Time.getISODate(Date.now());
-
-  // 处理多行message
-  message = message ? message.replace(/\r\n|\r|\n/g, `${os.EOL} | `) : message;
-
-  return `${message}`;
-});
 
 
 function setLevel(level) {
@@ -62,31 +49,30 @@ process.on('SIGUSR2', function() {
 
 class WinstonFactory {
 
-  constructor(options = DEFAULT_DRY_PEEK_OPTIONS) {
+  constructor(options = DEFAULT_DRY_PEEK_OPTIONS,
+              transportOptions,
+              dpTransportOptions,
+              winstonOptions
+  ) {
     this.options = options;
-    this.defaultTransportOptions_ = {
-      json: false,
-      format: dryPeekLogFormat
-    }
+    this.transportOptions_ = transportOptions;
+    this.dpTransportOptions_ = dpTransportOptions;
+    this.winstonOptions_ = winstonOptions;
   }
 
-  addNewTransportsToPool_(options) {
-    dryPeekTransportPool[options.name] = [];
+  addTransportsToPool_(transportName, transportOptions, dpTransportOptions) {
+    dryPeekTransportPool[transportName] = [];
 
-    const defaultTransportOption = Object.assign({}, this.defaultTransportOptions_, options);
-    const defaultTransport = new DailyRotateFile(defaultTransportOption);
+    const fileTransport = new DailyRotateFile(transportOptions);
+    dryPeekTransportPool[transportName].push(fileTransport);
 
-    dryPeekTransportPool[options.name].push(defaultTransport);
-
-    if (options.console) {
-      const consoleTransportOption = Object.assign({}, this.defaultTransportOptions_, options);
-      const consoleTransport = new winston.transports.Console(consoleTransportOption);
-
-      dryPeekTransportPool[options.name].push(consoleTransport);
+    if (dpTransportOptions.console) {
+      const consoleTransport = new winston.transports.Console(transportOptions);
+      dryPeekTransportPool[transportName].push(consoleTransport);
     }
 
-    if (options.needErrorFile) {
-      const errFileName = "error-" + options.filename;
+    if (dpTransportOptions.needErrorFile) {
+      const errFileName = "error-" + transportOptions.filename;
       let errTransportOption = {
         filename: errFileName,
         json: false,
@@ -94,25 +80,33 @@ class WinstonFactory {
         level: 'error',
       };
 
-      errTransportOption = Object.assign({}, this.defaultTransportOptions_, options, errTransportOption);
+      errTransportOption = Object.assign({}, transportOptions, errTransportOption);
       const errTransport = new DailyRotateFile(errTransportOption);
 
-      dryPeekTransportPool[options.name].push(errTransport);
+      dryPeekTransportPool[transportName].push(errTransport);
     }
-
-    return options.name;
   }
 
 
-  addNewWinstonToPool_(name) {
+  addWinstonToPool_(name, winstonOptions) {
+    const { colorized } = winstonOptions;
 
-    const winstonName = name;
-    const transportName = name;
+    const customFormat = winston.format.printf(({ level, message, }) => {
+      if (colorized) {
+        const colorizer = winston.format.colorize();
+        return colorizer.colorize(level, `${message}`);
+      }
 
-    if (!dryPeekWinstonPool[winstonName]) {
-      dryPeekWinstonPool[winstonName] = createLogger({
-        transports: dryPeekTransportPool[transportName],
-        exitOnError: false
+      return `${message}`;
+    })
+
+    if (!dryPeekWinstonPool[name]) {
+      dryPeekWinstonPool[name] = createLogger({
+        transports: dryPeekTransportPool[name],
+        exitOnError: false,
+        format: winston.format.combine(
+          customFormat
+        ),
       });
     }
   }
@@ -122,8 +116,15 @@ class WinstonFactory {
 
     const { name } = this.options;
 
-    this.addNewTransportsToPool_(this.options);
-    this.addNewWinstonToPool_(name);
+    this.addTransportsToPool_(
+      name,
+      this.transportOptions_,
+      this.dpTransportOptions_
+    );
+    this.addWinstonToPool_(
+      name,
+      this.winstonOptions_,
+    );
 
     return dryPeekWinstonPool[name];
   }

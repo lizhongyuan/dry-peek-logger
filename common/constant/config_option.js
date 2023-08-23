@@ -2,7 +2,8 @@
 
 
 exports.DEFAULT_DRY_PEEK_OPTIONS = {
-  name: 'dpLogger',
+  label: 'demo-service',
+  name: 'dryPeekLogger',
   console: true,
   needErrorFile: false,
   autoTraceId: true,
@@ -12,7 +13,8 @@ exports.DEFAULT_DRY_PEEK_OPTIONS = {
   datePattern: '-YYYY.MM.DD',
   zippedArchive: true,
   pivot: '|',
-  template: '{{timestamp}} {{level}} {{traceId}} {{ip}} {{pid}} {{method}} {{httpPath}} {{timeCost}} {{pivot}} {{message}}'
+  template: '{{timestamp}} {{level}} {{traceId}} {{ip}} {{pid}} {{method}} {{httpPath}} {{timeCost}} {{pivot}} {{message}}',
+  colorized: false,
 };
 
 
