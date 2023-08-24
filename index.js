@@ -1,8 +1,8 @@
 'use strict';
 
 
-const { BaseLogger, getGlobalWinstonInstance } = require('./logger');
+const { DryPeekLogger, winstonPool } = require('./logger');
 
-exports.BaseLogger = BaseLogger;
-exports.getGlobalWinstonInstance = getGlobalWinstonInstance;
+exports.DryPeekLogger = DryPeekLogger;
+exports.winstonPool = winstonPool;
 exports.middlewares = require('./middleware');

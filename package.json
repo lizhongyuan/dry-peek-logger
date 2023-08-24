@@ -8,10 +8,11 @@
   "dependencies": {
     "bufferpack": "^0.0.6",
     "express": "^4.18.2",
+    "handlebars": "^4.7.8",
+    "handlebars-helpers": "^0.10.0",
     "ip": "^1.1.8",
     "koa": "^2.14.1",
     "moment": "^2.29.4",
-    "mustache": "^4.2.0",
     "process": "^0.11.10",
     "winston": "^3.8.2",
     "winston-daily-rotate-file": "^4.7.1"

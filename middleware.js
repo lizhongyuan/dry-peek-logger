@@ -2,7 +2,7 @@
 
 
 const { Net } = require('./util');
-const { BaseLogger } = require('./logger');
+const { DryPeekLogger } = require('./logger');
 const { constant } = require('./common');
 const { DEFAULT_DRY_PEEK_OPTIONS } = constant.CONFIG_OPTION;
 const { TRACE_ID_HEADER } = constant.TRACE_ID;
@@ -20,7 +20,7 @@ function expressMiddlewareBuilder(options = DEFAULT_DRY_PEEK_OPTIONS) {
     options["traceId"] = req.headers[TRACE_ID_HEADER];
 
     req.context = {};
-    req.context[options.name] = new BaseLogger(options);
+    req.context[options.name] = new DryPeekLogger(options);
 
     next();
   }
@@ -41,7 +41,7 @@ function koaMiddlewareBuilder(options = DEFAULT_DRY_PEEK_OPTIONS) {
     options.method = ctx.method;
     options.traceId = ctx.req.headers[TRACE_ID_HEADER];
 
-    ctx[options.name] = new BaseLogger(options);
+    ctx[options.name] = new DryPeekLogger(options);
 
     await next();
   }

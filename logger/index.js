@@ -1,5 +1,5 @@
 'use strict';
 
 
-exports.BaseLogger = require('./base_logger');
-exports.getGlobalWinstonInstance = require('./winston').getWinstonPool;
+exports.DryPeekLogger = require('./dry-peek-logger');
+exports.winstonPool = require('./winston').getWinstonPool;

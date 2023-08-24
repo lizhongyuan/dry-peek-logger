@@ -1,22 +1,22 @@
 const { expressMiddlewareBuilder } = require('../middleware');
 
 const option = {
+    label: 'dry-peek-demo',
     colorized: true,
-    // label: 'lzyTest',
-    name: 'dryPeekLogger',     // 日志实例名称
+    name: 'dryPeekLogger',
     type: 'express',
     console: true,
     autoTraceId: true,
     needErrorFile: true,
-    level: 'silly',         // level
-    dirname: './logs',         // 文本存放路径
-    filename: 'test%DATE%.log',       // 日志名
+    level: 'debug',
+    dirname: './logs',
+    filename: 'test%DATE%.log',
     datePattern: '-YYYY.MM.DD',
     zippedArchive: true,
     prepend: false,
     maxSize: '20m',
     maxFiles: 10,
-    template: '{{label}} [{{timestamp}}] <{{level}}> {{traceId}} {{ip}} {{pid}} {{method}} {{httpPath}} ({{timeCost}}) {{pivot}} {{message}}'
+    template: '{{label}} [{{timestamp}}] <{{level}}> {{ append \'\' \'{\'}}{{traceId}}{{ append \'\' \'}\'}} {{ append \'\' \'{{\'}}{{ip}}{{ append \'\' \'}}\'}} {{pid}} {{method}} {{httpPath}} ({{timeCost}}) {{pivot}} {{message}}'
 };
 
 const express = require('express');
@@ -36,8 +36,8 @@ app.get('/test', function (req, res) {
     req.context.dryPeekLogger.info("Dry peek !");
     req.context.dryPeekLogger.info({ test: "Dry peek !" });
     req.context.dryPeekLogger.info("Dry peek %d, %d, %s", 321, 789, "dryPeek");
-    req.context.dryPeekLogger.info("Dry", "peek !", 666, { test: true});
     req.context.dryPeekLogger.info(["Dry", "peek !", 123, { test: true}]);
+    req.context.dryPeekLogger.info("Dry", "peek !", 666, { test: true});
 
     res.send('hello world, express')
 })
