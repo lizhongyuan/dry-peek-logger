@@ -10,9 +10,9 @@ const traceIdInstance = new TraceId();
 const { handlebars } = require('./handlebars');
 
 
-
 const winstonPool = getWinstonPool();
 const { WINSTON_DAILY_ROTATE_FILE_KEYS } = require('../common/constant/winston');
+
 
 class DryPeekLogger {
 
@@ -43,7 +43,7 @@ class DryPeekLogger {
     if (typeof loggerOptions.template === "string" && loggerOptions.template.indexOf("message") !== -1) {
       loggerOptions.template = loggerOptions.template.replace("message", "dryPeekEncode message");
     }
-    this.dryPeekOptions.logView.template = handlebars.compile(loggerOptions.template);
+    this.dryPeekOptions.template = handlebars.compile(loggerOptions.template);
     this.dryPeekOptions.logView.controller = DEFAULT_PLACE_HOLDER; // todo: for NestJS
     this.dryPeekOptions.logView.service = DEFAULT_PLACE_HOLDER;
     this.dryPeekOptions.logView.label = loggerOptions.label;
@@ -67,8 +67,8 @@ class DryPeekLogger {
     }
   }
 
-  setTraceId(traceId) {
 
+  setTraceId(traceId) {
     if (typeof traceId === 'string' && traceId !== '') {
       this.dryPeekOptions.logView.traceId = traceId;
       return;
@@ -83,36 +83,8 @@ class DryPeekLogger {
 
 
   getTraceId() {
-    return this.dryPeekOptions.traceId;
+    return this.dryPeekOptions.logView.traceId;
   }
-
-
-  /*
-  getModule() {
-    return this.context.module;
-  }
-
-  setModule(module) {
-    this.context.module = module;
-    return this;
-  }
-
-  setFunc(func) {
-    this.context.func = func;
-    return this;
-  }
-
-  getFunc() {
-    return this.context.func;
-  }
-   */
-
-  /*
-  setTraceId(traceId) {
-    this.context.traceId = traceId;
-    return this;
-  }
-   */
 
 
   error(...args) {
@@ -122,12 +94,14 @@ class DryPeekLogger {
     winstonPool[this.name_].error(formatLog);
   }
 
+
   warn(...args) {
     this.dryPeekOptions.logView.timestamp = Time.getISODate(Date.now());
     this.dryPeekOptions.logView.level = 'warn';
     const formatLog = this._buildLog(args);
     winstonPool[this.name_].warn(formatLog);
   }
+
 
   verbose(...args) {
     this.dryPeekOptions.logView.timestamp = Time.getISODate(Date.now());
@@ -137,6 +111,7 @@ class DryPeekLogger {
     winstonPool[this.name_].verbose(formatLog);
   }
 
+
   info(...args) {
     this.dryPeekOptions.logView.timestamp = Time.getISODate(Date.now());
     this.dryPeekOptions.logView.level = 'info';
@@ -144,6 +119,7 @@ class DryPeekLogger {
     const formatLog = this._buildLog(args);
     winstonPool[this.name_].info(formatLog);
   }
+
 
   debug(...args) {
     this.dryPeekOptions.logView.timestamp = Time.getISODate(Date.now());
@@ -153,6 +129,7 @@ class DryPeekLogger {
     winstonPool[this.name_].debug(formatLog);
   }
 
+
   silly(...args) {
     this.dryPeekOptions.logView.timestamp = Time.getISODate(Date.now());
     this.dryPeekOptions.logView.level = 'silly';
@@ -160,6 +137,7 @@ class DryPeekLogger {
     const formatLog = this._buildLog(args);
     winstonPool[this.name_].silly(formatLog);
   }
+
 
   _buildLog(args) {
 
@@ -185,8 +163,7 @@ class DryPeekLogger {
     this.dryPeekOptions.logView.message = format(...handledArgs);
 
     try {
-      // const output = Mustache.render(this.dryPeekOptions.template, this.dryPeekOptions.logView);
-      return this.dryPeekOptions.logView.template(this.dryPeekOptions.logView);
+      return this.dryPeekOptions.template(this.dryPeekOptions.logView);
     } catch (e) {
       console.log(e)
       return '';

@@ -1,6 +1,8 @@
+const express = require('express');
 const { expressMiddlewareBuilder } = require('../middleware');
 
-const option = {
+
+const loggerConfig = {
     label: 'dry-peek-demo',
     colorized: true,
     name: 'dryPeekLogger',
@@ -19,12 +21,12 @@ const option = {
     template: '{{label}} [{{timestamp}}] <{{level}}> {{ append \'\' \'{\'}}{{traceId}}{{ append \'\' \'}\'}} {{ append \'\' \'{{\'}}{{ip}}{{ append \'\' \'}}\'}} {{pid}} {{method}} {{httpPath}} ({{timeCost}}) {{pivot}} {{message}}'
 };
 
-const express = require('express');
-const app = express();
 
+const app = express();
 const port = 3000;
 
-app.use(expressMiddlewareBuilder(option));
+app.use(expressMiddlewareBuilder(loggerConfig));
+
 
 app.get('/test', function (req, res) {
     req.context.dryPeekLogger.error("test dry-peek-logger error level");
@@ -41,6 +43,7 @@ app.get('/test', function (req, res) {
 
     res.send('hello world, express')
 })
+
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`)

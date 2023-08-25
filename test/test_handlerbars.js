@@ -10,7 +10,7 @@ const log = {
   httpPath: "/test",
   timeCost: '11ms',
   pivot: '|',
-  message: 'lzy test'
+  message: 'Hello'
 }
 
 const template = Handlebars.compile("{{timestamp}} {{level}} {{traceId}} {{ip}} {{pid}} {{method}} {{httpPath}} {{timeCost}} {{pivot}} {{message}}");
