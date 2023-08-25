@@ -2,19 +2,33 @@
 
 
 exports.DEFAULT_DRY_PEEK_OPTIONS = {
-  name: 'dpLogger',
+  label: 'demo-service',
+  name: 'dryPeekLogger',
   console: true,
   needErrorFile: false,
   autoTraceId: true,
-  level: 'info',
-  dirname: './logs',
-  filename: 'app%DATE%',
-  datePattern: '-YYYY.MM.DD',
-  zippedArchive: true,
+  colorized: false,
   pivot: '|',
-  template: '{{timestamp}} {{level}} {{traceId}} {{ip}} {{pid}} {{method}} {{httpPath}} {{timeCost}} {{pivot}} {{message}}'
+  template: '{{label}} {{timestamp}} {{level}} {{traceId}} {{ip}} {{pid}} {{method}} {{httpPath}} {{timeCost}} {{pivot}} {{message}}',
+
+  frequency: null,
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: false,
+  filename: 'dryPeek.log-%DATE%',
+  dirname: '.',
+  stream: null,
+  maxSize: null,
+  maxFiles: null,
+  options: { flags: 'a' },
+  auditFile: '..json',
+  utc: false,
+  extension: '',
+  createSymlink: false,
+  symlinkName: 'current.log',
+  auditHashType: 'sha256',
+  level: 'silly',
 };
 
 
 exports.DEFAULT_PLACE_HOLDER = '-';
-exports.TRACE_ID_HEADER = 'x-trace-id';
+exports.TRACE_ID_HEADER = 'dry-peek-trace-id';

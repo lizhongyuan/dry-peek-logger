@@ -2,7 +2,7 @@
 
 
 const { Net } = require('./util');
-const { BaseLogger } = require('./logger');
+const { DryPeekLogger } = require('./logger');
 const { constant } = require('./common');
 const { DEFAULT_DRY_PEEK_OPTIONS } = constant.CONFIG_OPTION;
 const { TRACE_ID_HEADER } = constant.TRACE_ID;
@@ -10,17 +10,12 @@ const { TRACE_ID_HEADER } = constant.TRACE_ID;
 
 function expressMiddlewareBuilder(options = DEFAULT_DRY_PEEK_OPTIONS) {
   function expressLoggerMiddleware (req, res, next) {
-
-    if (!options["name"]) {
-      options["name"] = 'dpLogger';
-    }
-
     options["method"] = req.method;
     options["httpPath"] = Net.Http.getPath(req.originalUrl);
     options["traceId"] = req.headers[TRACE_ID_HEADER];
 
     req.context = {};
-    req.context[options.name] = new BaseLogger(options);
+    req.context[options.name] = new DryPeekLogger(options);
 
     next();
   }
@@ -30,18 +25,12 @@ function expressMiddlewareBuilder(options = DEFAULT_DRY_PEEK_OPTIONS) {
 
 
 function koaMiddlewareBuilder(options = DEFAULT_DRY_PEEK_OPTIONS) {
-
   async function koa2LoggerMiddleware(ctx, next) {
-
-    if (!options.name) {
-      options.name = 'dpLogger';
-    }
-
     options.httpPath = Net.Http.getPath(ctx.url);
     options.method = ctx.method;
     options.traceId = ctx.req.headers[TRACE_ID_HEADER];
 
-    ctx[options.name] = new BaseLogger(options);
+    ctx[options.name] = new DryPeekLogger(options);
 
     await next();
   }

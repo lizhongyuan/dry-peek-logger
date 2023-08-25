@@ -6,7 +6,7 @@ const app = new Koa();
 
 const { koaMiddlewareBuilder } = require('../middleware');
 
-const option = {
+const loggerConfig = {
   name: 'dpLogger',
   level: 'debug',
   filename: 'app',
@@ -17,7 +17,7 @@ const option = {
 };
 
 
-app.use(koaMiddlewareBuilder(option));
+app.use(koaMiddlewareBuilder(loggerConfig));
 
 
 app.use(async (ctx, next) => {

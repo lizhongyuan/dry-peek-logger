@@ -1,51 +1,24 @@
 'use strict';
 
 
-const os = require('os');
-
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
-const { createLogger, format } = winston;
-const { printf } = format;
-const { Time } = require('../util');
-const { DEFAULT_DRY_PEEK_OPTIONS } = require('../common/constant/config_option');
-
-const dryPeekWinstonPool = {};    // winston池
-
-/*
- {
-    "myLogger1": [
-
-    ],
-    "myLogger2": [
-
-    ],
- }
- */
-const dryPeekTransportPool = {};  // transport池
+const { createLogger, format, transports } = winston;
 
 
-const dryPeekLogFormat = printf(({ message, }) => {
-
-  const timestamp = Time.getISODate(Date.now());
-
-  // 处理多行message
-  message = message ? message.replace(/\r\n|\r|\n/g, `${os.EOL} | `) : message;
-
-  return `${message}`;
-});
+const winstonPool = {};
+const transportPool = {};
 
 
 function setLevel(level) {
 
-  const keys = Object.keys(dryPeekTransportPool);
+  const keys = Object.keys(transportPool);
 
-  keys.forEach(key => {
-    for (const transport in dryPeekTransportPool[key]) {
-      dryPeekTransportPool[key][transport].level = level;
-      console.log('transport:', transport, 'level', level);
+  for (const key of keys) {
+    for (const transport in transportPool[key]) {
+      transportPool[key][transport].level = level;
     }
-  })
+  }
 }
 
 
@@ -61,71 +34,79 @@ process.on('SIGUSR2', function() {
 
 
 class WinstonFactory {
+  constructor(name, transportOptions, dpTransportOptions, winstonOptions) {
+    this.name_ = name;
+    this.transportOptions_ = transportOptions;
+    this.dpTransportOptions_ = dpTransportOptions;
+    this.winstonOptions_ = winstonOptions;
+  }
 
-  constructor(options = DEFAULT_DRY_PEEK_OPTIONS) {
-    this.options = options;
-    this.defaultTransportOptions_ = {
+
+  addTransportsToPool_(transportName, transportOptions, dpTransportOptions) {
+    transportPool[transportName] = [];
+
+    const fileTransport = new DailyRotateFile(transportOptions);
+    transportPool[transportName].push(fileTransport);
+
+    if (dpTransportOptions.console) {
+      this.addConsoleTransportToPool_(transportName, transportOptions);
+    }
+
+    if (dpTransportOptions.needErrorFile) {
+      this.addErrFileTransportToPool_(transportName, transportOptions);
+    }
+  }
+
+
+  addConsoleTransportToPool_(transportName, transportOptions) {
+    const consoleTransport = new transports.Console(transportOptions);
+    transportPool[transportName].push(consoleTransport);
+  }
+
+
+  addErrFileTransportToPool_(transportName, transportOptions) {
+    const errFileName = "error-" + transportOptions.filename;
+    let errTransportOption = {
+      filename: errFileName,
       json: false,
-      format: dryPeekLogFormat
-    }
-  }
+      humanReadableUnhandledException: true,
+      level: 'error',
+    };
 
-  addNewTransportsToPool_(options) {
-    dryPeekTransportPool[options.name] = [];
+    errTransportOption = Object.assign({}, transportOptions, errTransportOption);
+    const errTransport = new DailyRotateFile(errTransportOption);
 
-    const defaultTransportOption = Object.assign({}, this.defaultTransportOptions_, options);
-    const defaultTransport = new DailyRotateFile(defaultTransportOption);
-
-    dryPeekTransportPool[options.name].push(defaultTransport);
-
-    if (options.console) {
-      const consoleTransportOption = Object.assign({}, this.defaultTransportOptions_, options);
-      const consoleTransport = new winston.transports.Console(consoleTransportOption);
-
-      dryPeekTransportPool[options.name].push(consoleTransport);
-    }
-
-    if (options.needErrorFile) {
-      const errFileName = "error-" + options.filename;
-      let errTransportOption = {
-        filename: errFileName,
-        json: false,
-        humanReadableUnhandledException: true,
-        level: 'error',
-      };
-
-      errTransportOption = Object.assign({}, this.defaultTransportOptions_, options, errTransportOption);
-      const errTransport = new DailyRotateFile(errTransportOption);
-
-      dryPeekTransportPool[options.name].push(errTransport);
-    }
-
-    return options.name;
+    transportPool[transportName].push(errTransport);
   }
 
 
-  addNewWinstonToPool_(name) {
+  addWinstonToPool_(name, winstonOptions) {
+    const { colorized } = winstonOptions;
 
-    const winstonName = name;
-    const transportName = name;
+    const formatPrintf = format.printf(({ level, message, }) => {
+      if (colorized) {
+        const colorizer = format.colorize();
+        return colorizer.colorize(level, `${message}`);
+      }
 
-    if (!dryPeekWinstonPool[winstonName]) {
-      dryPeekWinstonPool[winstonName] = createLogger({
-        transports: dryPeekTransportPool[transportName],
-        exitOnError: false
+      return `${message}`;
+    })
+
+    if (!winstonPool[name]) {
+      winstonPool[name] = createLogger({
+        transports: transportPool[name],
+        exitOnError: false,
+        format: format.combine(
+          formatPrintf
+        ),
       });
     }
   }
 
 
   generate() {
-
-    const { name } = this.options;
-
-    this.addNewTransportsToPool_(this.options);
-    this.addNewWinstonToPool_(name);
-
-    return dryPeekWinstonPool[name];
+    this.addTransportsToPool_(this.name_, this.transportOptions_, this.dpTransportOptions_);
+    this.addWinstonToPool_(this.name_, this.winstonOptions_);
   }
 }
 
@@ -133,5 +114,5 @@ class WinstonFactory {
 exports.WinstonFactory = WinstonFactory;
 
 exports.getWinstonPool = () => {
-  return dryPeekWinstonPool;
+  return winstonPool;
 };
