@@ -1,6 +1,6 @@
 {
   "name": "dry-peek-logger",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A traceable, flexible and light nodejs logger. Sometimes, dry peek is best strategy",
   "main": "index.js",
   "author": "cyberdash@163.com",
